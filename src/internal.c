@@ -6983,6 +6983,9 @@ int SetSSL_CTX(WOLFSSL* ssl, WOLFSSL_CTX* ctx, int writeDup)
     ssl->options.client_psk_cb = ctx->client_psk_cb;
     ssl->options.server_psk_cb = ctx->server_psk_cb;
     ssl->options.psk_ctx       = ctx->psk_ctx;
+    //flag /* >>> 继承 QKEY 配置 <<< */
+    ssl->options.client_qkey_cb = ctx->client_qkey_cb;
+    ssl->options.server_qkey_cb = ctx->server_qkey_cb;
 #ifdef WOLFSSL_TLS13
     ssl->options.client_psk_cs_cb    = ctx->client_psk_cs_cb;
     ssl->options.client_psk_tls13_cb = ctx->client_psk_tls13_cb;
@@ -7748,6 +7751,9 @@ int InitSSL(WOLFSSL* ssl, WOLFSSL_CTX* ctx, int writeDup)
     #endif
     #if defined(HAVE_SESSION_TICKET) || !defined(NO_PSK)
         ssl->options.noPskDheKe = ctx->noPskDheKe;
+        /* >>> [正确位置] 继承 QKEY 配置 <<< */
+        /* QKEY 模式依赖于 PSK，但不一定依赖于椭圆曲线 (Curves) */ //flag
+        ssl->options.useQKeyMode = ctx->useQKeyMode;
     #ifdef HAVE_SUPPORTED_CURVES
         ssl->options.onlyPskDheKe = ctx->onlyPskDheKe;
     #endif /* HAVE_SUPPORTED_CURVES */
@@ -11031,6 +11037,7 @@ void ShrinkInputBuffer(WOLFSSL* ssl, int forcedFree)
     ssl->buffers.inputBuffer.length = (word32)usedLength;
 }
 
+//TODO:缓冲区数据出口
 int SendBuffered(WOLFSSL* ssl)
 {
     int retryLimit = WOLFSSL_MODE_AUTO_RETRY_ATTEMPTS;

@@ -1185,8 +1185,14 @@ static const byte derivedLabel[DERIVED_LABEL_SZ + 1] =
  */
 int DeriveHandshakeSecret(WOLFSSL* ssl)
 {
-    byte key[WC_MAX_DIGEST_SIZE];
+    byte key[WC_MAX_DIGEST_SIZE]; /* 用于存放 Salt (Derived Early Secret) */
     int ret;
+
+    //flag
+/* [新增] 定义临时指针，默认指向标准 ECDHE/PSK 数据 */
+    byte* ikm   = ssl->arrays->preMasterSecret;
+    int         ikmSz = (int)ssl->arrays->preMasterSz;
+
     WOLFSSL_MSG("Derive Handshake Secret");
     if (ssl == NULL || ssl->arrays == NULL) {
         return BAD_FUNC_ARG;
@@ -1197,17 +1203,46 @@ int DeriveHandshakeSecret(WOLFSSL* ssl)
         return ret;
 #endif
 
+  /* ----------------------------------------------------------------------
+     * 第一步：计算 Salt
+     * Salt = Derive-Secret(Early Secret, "derived", "")
+     * 结果存储在局部变量 'key' 中
+     * ---------------------------------------------------------------------- */
     ret = DeriveKeyMsg(ssl, key, -1, ssl->arrays->secret,
                         derivedLabel, DERIVED_LABEL_SZ,
                         NULL, 0, ssl->specs.mac_algorithm);
     if (ret != 0)
         return ret;
 
+    /* ----------------------------------------------------------------------
+     * 第二步：准备 IKM (Input Key Material) -- [你的修改核心在这里]
+     * ---------------------------------------------------------------------- */
+
+    /* >>> [开始插入修改] <<< */
+    /* 如果协商成功使用 QKEY，则替换输入密钥材料 (IKM) */
+    /* 这里的判断非常关键：既要配置开启(options)，又要协商成功(arrays)，又要成功加载 */
+    if (ssl->options.useQKeyMode && ssl->arrays->useQKey && ssl->arrays->haveQKey) {
+        WOLFSSL_MSG("[TLSeQ] Using QKEY for Handshake Secret Derivation!");
+        ikm   = ssl->arrays->qkey;
+        ikmSz = QKEY_SIZE; /* 使用宏定义 (32) */
+    }
+    /* >>> [结束插入修改] <<< */
+
+    /* ----------------------------------------------------------------------
+     * 第三步：执行 HKDF-Extract
+     * Handshake Secret = HKDF-Extract(Salt, IKM)
+     * * Output: ssl->arrays->preMasterSecret (wolfSSL 复用这个缓冲区存 Secret)
+     * Salt:   key (刚刚计算出来的)
+     * IKM:    ikm_ptr (根据模式指向 ECDHE 或 QKEY)
+     * ---------------------------------------------------------------------- */
     PRIVATE_KEY_UNLOCK();
-    ret = Tls13_HKDF_Extract(ssl, ssl->arrays->preMasterSecret,
-            key, ssl->specs.hash_size,
-            ssl->arrays->preMasterSecret, (int)ssl->arrays->preMasterSz,
-            mac2hash(ssl->specs.mac_algorithm));
+    
+    ret = Tls13_HKDF_Extract(ssl, 
+            ssl->arrays->preMasterSecret,       /* 输出：Handshake Secret 存回这里 */
+            key, ssl->specs.hash_size,          /* Salt: Derived Early Secret */
+            ikm, ikmSz,                        /* IKM: QKey 或 ECDHE Secret */
+            mac2hash(ssl->specs.mac_algorithm)); /* Hash 算法 ID */
+            
     PRIVATE_KEY_LOCK();
 
     return ret;
@@ -13947,6 +13982,37 @@ int wolfSSL_only_dhe_psk(WOLFSSL* ssl)
     return 0;
 }
 #endif /* HAVE_SUPPORTED_CURVES */
+
+/* 开启 QKEY 模式 (针对 Context，影响所有后续创建的 SSL 会话) */
+int wolfSSL_CTX_use_qkey_psk(WOLFSSL_CTX* ctx)
+{
+    /* 校验参数和版本：必须是 TLS 1.3 */
+    if (ctx == NULL || !IsAtLeastTLSv1_3(ctx->method->version))
+        return BAD_FUNC_ARG;
+
+    /* 设置标志位 */
+    ctx->useQKeyMode = 1;
+
+    /* * 策略思考：
+     * 如果开启了 QKEY，是否需要强制关闭普通的 DHE？
+     * 如果你的逻辑是 QKEY 替代 DHE，可以考虑在这里显式关闭其他冲突的标志：
+     * ctx->onlyPskDheKe = 0; 
+     */
+
+    return 0;
+}
+
+/* 开启 QKEY 模式 (针对单个 SSL 会话) */
+int wolfSSL_use_qkey_psk(WOLFSSL* ssl)
+{
+    if (ssl == NULL || !IsAtLeastTLSv1_3(ssl->version))
+        return BAD_FUNC_ARG;
+
+    /* 设置标志位 (假设你的标志在 ssl->options 结构体里) */
+    ssl->options.useQKeyMode = 1;
+
+    return 0;
+}
 
 int Tls13UpdateKeys(WOLFSSL* ssl)
 {

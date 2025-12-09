@@ -2409,6 +2409,22 @@ WOLFSSL_LOCAL int  SetSuitesHashSigAlgo(Suites* suites, const char* list);
                           unsigned int, unsigned char*, unsigned int);
     typedef unsigned int (*wc_psk_server_callback)(WOLFSSL*, const char*,
                           unsigned char*, unsigned int);
+    //flag
+    /* 定义一个函数指针类型：输入 ID，输出 Key */
+        /* * 客户端 QKey 回调原型 
+    * 参数 id: [输出] 用户填入选中的 ID
+    * 参数 key: [输出] 用户填入对应的 Key
+    * 参数 keySz: [输入] key 缓冲区的大小
+    * 返回值: 返回 key 的实际长度 (例如 32)，返回 0 表示失败/不发送
+    */
+    typedef unsigned int (*wc_qkey_client_callback)(WOLFSSL* , unsigned int* , unsigned char* , unsigned int );
+    /* * 服务器 QKey 回调原型 
+    * 参数 id: [输入] 用户填入选中的 ID
+    * 参数 key: [输出] 用户填入对应的 Key
+    * 参数 keySz: [输入] key 缓冲区的大小
+    * 返回值: 返回 key 的实际长度 (例如 32)，返回 0 表示失败/不发送
+    */
+    typedef unsigned int (*wc_qkey_server_callback)(WOLFSSL* , unsigned int , unsigned char* , unsigned int );
 #ifdef WOLFSSL_TLS13
     typedef unsigned int (*wc_psk_client_cs_callback)(WOLFSSL*, const char*,
                           char*, unsigned int, unsigned char*, unsigned int,
@@ -2964,6 +2980,10 @@ typedef struct Options Options;
 #define TLSXT_RENEGOTIATION_INFO         0xff01
 #define TLSXT_KEY_QUIC_TP_PARAMS_DRAFT   0xffa5 /* from */
                                                 /* draft-ietf-quic-tls-27 */
+
+//flag
+#define TLSXT_QKEY_ID  0xfff1  /* 实验性扩展ID，2字节 */
+#define QKEY_SIZE     32     /* 假设 QKEY 是 256位 */
 
 typedef enum {
 #ifdef HAVE_SNI
@@ -3666,7 +3686,9 @@ WOLFSSL_LOCAL int TLSX_PreSharedKey_Parse_ClientHello(TLSX** extensions,
 /* The possible Pre-Shared Key key exchange modes. */
 enum PskKeyExchangeMode {
     PSK_KE,
-    PSK_DHE_KE
+    PSK_DHE_KE,
+    PSK_QKD_KE //flag, for quantum key exchange
+    //TODO: add more modes if needed
 };
 
 /* User can define this. */
@@ -3852,6 +3874,7 @@ struct WOLFSSL_CTX {
     byte        noTicketTls13:1;  /* TLS 1.3 Server won't create new Ticket */
 #if defined(HAVE_SESSION_TICKET) || !defined(NO_PSK)
     byte        noPskDheKe:1;     /* Don't use (EC)DHE with PSK */
+    byte        useQKeyMode:1;   //flah
 #ifdef HAVE_SUPPORTED_CURVES
     byte        onlyPskDheKe:1;   /* Only use (EC)DHE with PSK */
 #endif
@@ -3979,6 +4002,9 @@ struct WOLFSSL_CTX {
     byte        havePSK;                /* psk key set by user */
     wc_psk_client_callback client_psk_cb;  /* client callback */
     wc_psk_server_callback server_psk_cb;  /* server callback */
+    //flag
+    wc_qkey_client_callback client_qkey_cb; /* 客户端专用回调 */
+    wc_qkey_server_callback server_qkey_cb; /* server callback */
 #ifdef WOLFSSL_TLS13
     wc_psk_client_cs_callback    client_psk_cs_cb;     /* client callback */
     wc_psk_client_tls13_callback client_psk_tls13_cb;  /* client callback */
@@ -4908,6 +4934,9 @@ struct Options {
 #ifndef NO_PSK
     wc_psk_client_callback client_psk_cb;
     wc_psk_server_callback server_psk_cb;
+    //flag
+    wc_qkey_client_callback client_qkey_cb; /* client callback for QKey */
+    wc_qkey_server_callback server_qkey_cb; /* server callback for QKey */
 #ifdef OPENSSL_EXTRA
     wc_psk_use_session_cb_func session_psk_cb;
 #endif
@@ -4978,6 +5007,8 @@ struct Options {
     word16            noPskDheKe:1;       /* Don't use (EC)DHE with PSK */
 #ifdef HAVE_SUPPORTED_CURVES
     word16            onlyPskDheKe:1;     /* Only use (EC)DHE with PSK */
+    //flag,标准是否使用QKEY （:1是位宽，默认值是0）
+    word16            useQKeyMode:1;      /* Use QKey mode with PSK */
 #endif
 #endif
     word16            partialWrite:1;     /* only one msg per write call */
@@ -5205,6 +5236,13 @@ typedef struct Arrays {
     byte            cookieSz;
 #endif
     byte            pendingMsgType;    /* defrag buffer message type */
+/* [QKEY 新增字段] */ //flag
+#ifdef WOLFSSL_TLS13
+    byte   qkey[QKEY_SIZE];   /* 存放实际的 Quantum Key (32字节) */
+    word32 qkeyID;            /* 存放 ID (4字节) */
+    int    useQKey;           /* 运行时标志：表示本次会话协商成功，确实使用了 QKEY */
+    int    haveQKey;           /* 运行时标志：表示当前qkey是否成功读取到 */
+#endif
 } Arrays;
 
 #ifndef ASN_NAME_MAX

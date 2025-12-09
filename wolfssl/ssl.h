@@ -1418,10 +1418,14 @@ WOLFSSL_API int  wolfSSL_send_hrr_cookie(WOLFSSL* ssl,
 WOLFSSL_API int  wolfSSL_disable_hrr_cookie(WOLFSSL * ssl);
 WOLFSSL_API int  wolfSSL_CTX_no_ticket_TLSv13(WOLFSSL_CTX* ctx);
 WOLFSSL_API int  wolfSSL_no_ticket_TLSv13(WOLFSSL* ssl);
-WOLFSSL_API int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_CTX_no_dhe_psk(WOLFSSL_CTX* ctx);  //only psk api
 WOLFSSL_API int  wolfSSL_no_dhe_psk(WOLFSSL* ssl);
-WOLFSSL_API int  wolfSSL_CTX_only_dhe_psk(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_CTX_only_dhe_psk(WOLFSSL_CTX* ctx); //ecdh + psk api
 WOLFSSL_API int  wolfSSL_only_dhe_psk(WOLFSSL* ssl);
+/* >>> [添加你的 QKEY API] <<< */ //flag
+WOLFSSL_API int  wolfSSL_CTX_use_qkey_psk(WOLFSSL_CTX* ctx);
+WOLFSSL_API int  wolfSSL_use_qkey_psk(WOLFSSL* ssl);
+
 WOLFSSL_API int  wolfSSL_update_keys(WOLFSSL* ssl);
 WOLFSSL_API int  wolfSSL_key_update_response(WOLFSSL* ssl, int* required);
 WOLFSSL_API int  wolfSSL_CTX_allow_post_handshake_auth(WOLFSSL_CTX* ctx);
@@ -3128,6 +3132,19 @@ enum { /* ssl Constants */
                                                         wc_psk_server_callback cb);
     WOLFSSL_API void wolfSSL_set_psk_server_callback(WOLFSSL* ssl,
                                                         wc_psk_server_callback cb);
+    //flag /* >>> [添加你的 QKEY API] <<< */ 
+    typedef unsigned int (*wc_qkey_client_callback)(WOLFSSL* ssl, unsigned int* , unsigned char* , unsigned int );
+    typedef unsigned int (*wc_qkey_server_callback)(WOLFSSL* ssl, unsigned int , unsigned char* , unsigned int );
+    WOLFSSL_API void wolfSSL_CTX_set_qkey_client_callback(WOLFSSL_CTX* ctx,
+                                                        wc_qkey_client_callback cb);
+    WOLFSSL_API void wolfSSL_set_qkey_client_callback(WOLFSSL* ssl,
+                                                        wc_qkey_client_callback cb);
+    WOLFSSL_API void wolfSSL_CTX_set_qkey_server_callback(WOLFSSL_CTX* ctx,
+                                                        wc_qkey_server_callback cb);
+    WOLFSSL_API void wolfSSL_set_qkey_server_callback(WOLFSSL* ssl,
+                                                        wc_qkey_server_callback cb);
+
+
 #ifdef WOLFSSL_TLS13
     typedef unsigned int (*wc_psk_server_tls13_callback)(WOLFSSL* ssl, const char*,
         unsigned char*, unsigned int, const char**);

@@ -116,6 +116,49 @@ static int TLSX_PopulateSupportedGroups(WOLFSSL* ssl, TLSX** extensions);
     #define HSHASH_SZ FINISHED_SZ
 #endif
 
+//flag
+/**
+ * [客户端使用] 设置 QKey
+ * 作用：客户端在握手前调用，将QKEY的 ID 和 Key 加载到 ssl 对象中，准备发送。
+ */
+static int wolfSSL_SetQKey(WOLFSSL* ssl, word32 * id, byte* key, word32 keySz)
+{
+    if (ssl == NULL || ssl->arrays == NULL) {
+        return BAD_FUNC_ARG;
+    }
+    WOLFSSL_MSG("[TLSeQ] wolfSSL_SetQKey: Client Loading QKey...");
+
+       /* 检查用户有没有注册回调 */
+    if (ssl->options.client_qkey_cb != NULL) {
+        /* 调用应用层提供的逻辑！ */
+        return (int)ssl->options.client_qkey_cb(ssl, id, key, keySz);
+    }
+    WOLFSSL_MSG("[TLSeQ] Error: No QKey callback registered!");
+    return -1;
+}
+
+/**
+ * [服务端使用] 查找 QKey
+ * 作用：服务端解析 ClientHello 收到 ID 后，调用此函数查找对应的 Key。
+ */
+static int wolfSSL_LookupQKey(WOLFSSL* ssl, word32 id, byte* key, word32 keySz)
+{
+    if (ssl == NULL || ssl->arrays == NULL) {
+        return BAD_FUNC_ARG;
+    }
+    WOLFSSL_MSG("[TLSeQ] wolfSSL_LookupQKey: Finding QKey...");
+   /* 检查用户有没有注册回调 */
+    if (ssl->options.server_qkey_cb != NULL) {
+        /* 调用应用层提供的逻辑！ */
+        return (int)ssl->options.server_qkey_cb(ssl, id, key, keySz);
+    }
+
+    WOLFSSL_MSG("[TLSeQ] Error: No QKey callback registered!");
+    return -1;
+}
+
+
+
 int BuildTlsHandshakeHash(WOLFSSL* ssl, byte* hash, word32* hashLen)
 {
     int ret = 0;
@@ -15187,6 +15230,44 @@ int TLSX_GetRequestSize(WOLFSSL* ssl, byte msgType, word32* pLength)
         }
     }
 
+   //flag
+    /* * 处理自定义 QKEY 扩展长度 (ClientHello)
+     * 逻辑：只要开启了 useQKeyMode，我们就一定会手动写入，所以必须预留空间。
+     * 不需要 TLSX_Find，因为我们没有 Push 进链表。
+     */
+    if (msgType == client_hello && ssl->options.useQKeyMode) { 
+        /* 检查：如果尚未加载 QKey，且存在回调函数，则尝试调用回调 */
+        /* 我们可以用 qkeyID 是否为 0 来判断是否已加载，或者加个标志位 */
+        if (ssl->arrays->haveQKey == 0 && ssl->options.client_qkey_cb != NULL) {
+            
+            WOLFSSL_MSG("[TLSeQ] Invoking Client QKey Callback...");
+            
+            /* 调用用户回调 */
+            int retLen = wolfSSL_SetQKey(ssl,  &ssl->arrays->qkeyID,  ssl->arrays->qkey, QKEY_SIZE);
+            
+            if (retLen == 0) {
+                /* 回调成功，数据已填入 arrays */
+                ssl->arrays->haveQKey = 1; // 标记已加载
+                WOLFSSL_MSG("[TLSeQ] Client QKey loaded via callback.");
+            } else {
+                ssl->arrays->haveQKey = 0; // 标记未加载
+                WOLFSSL_MSG("[TLSeQ] Client QKey callback returned no key.");
+                /* 可以选择返回错误，或者干脆不发送扩展（降级） */
+            }
+        }
+        /* * 长度计算分解：
+            * 2 字节 = 扩展类型 ID (TLSXT_QKEY_ID)
+            * 2 字节 = 扩展长度字段 (存放数值 4)
+            * 4 字节 = qkeyID 数据本身 (word32)
+            * 总计 = 8 字节
+            */
+        /* 只有当数据成功加载后 (useQKey == 1)，才增加长度 */
+        if (ssl->arrays->haveQKey) {
+            length += 2 + 2 + 4;  // 8 bytes
+        }    
+    }
+    /* >>>>>>>> [结束插入修改] <<<<<<<< */
+
 #ifdef HAVE_EXTENDED_MASTER
     if (msgType == client_hello && ssl->options.haveEMS &&
                   (!IsAtLeastTLSv1_3(ssl->version) || ssl->options.downgrade)) {
@@ -15374,6 +15455,29 @@ int TLSX_WriteRequest(WOLFSSL* ssl, byte* output, byte msgType, word32* pOffset)
         }
     }
 
+    /* >>>>>>>> [开始插入修改] <<<<<<<< */ //flag
+    /* 手动写入 QKEY 扩展 */
+    /* 逻辑：扩展ID(2字节) + 长度(2字节) + qkeyID(4字节) */
+    if (msgType == client_hello && ssl->options.useQKeyMode && ssl->arrays->haveQKey) {
+
+        /* 写入 QKEY 扩展数据 */
+        WOLFSSL_MSG("[TLSeQ] Client Hello: QKey extension to write");
+
+        /* 1. 写入 ID: TLSXT_QKEY_ID (假设是 0xfff1) */
+        c16toa(TLSXT_QKEY_ID, output + offset);
+        offset += 2;
+
+        /* 2. 写入长度: 固定为 4 */
+        c16toa(4, output + offset);
+        offset += 2;
+
+        /* 3. 写入数据: qkeyID (word32 转网络字节序) */
+        c32toa(ssl->arrays->qkeyID, output + offset);
+        offset += 4;
+        
+    }
+    /* >>>>>>>> [结束插入修改] <<<<<<<< */
+
 #ifdef HAVE_EXTENDED_MASTER
     if (msgType == client_hello && ssl->options.haveEMS &&
                   (!IsAtLeastTLSv1_3(ssl->version) || ssl->options.downgrade)) {
@@ -15532,6 +15636,7 @@ int TLSX_GetResponseSize(WOLFSSL* ssl, byte msgType, word16* pLength)
 #endif
     }
 
+
 #ifdef HAVE_EXTENDED_MASTER
     if (ssl->options.haveEMS && msgType == server_hello &&
                                               !IsAtLeastTLSv1_3(ssl->version)) {
@@ -15544,6 +15649,26 @@ int TLSX_GetResponseSize(WOLFSSL* ssl, byte msgType, word16* pLength)
         if (ret != 0)
             return ret;
     }
+
+//flag
+/* >>>>>>>> [插入点在这里] <<<<<<<< */
+    
+    /* 手动计算 QKEY 扩展长度 (ServerHello 响应) */
+    /* 判断条件: 
+       1. 消息类型是 ServerHello
+       2. 服务端 arrays 结构体存在
+       3. 双方协商成功使用了 QKEY (useQKey == 1) 
+       4. 服务端已经拥有 QKEY (haveQKey == 1)
+    */
+    if (msgType == server_hello && ssl->arrays && ssl->arrays->useQKey && ssl->arrays->haveQKey) {
+        /* 长度分解:
+         * 2 字节 = 扩展类型 ID (TLSXT_QKEY_ID)
+         * 2 字节 = 长度字段 (固定为 4)
+         * 4 字节 = ID 数据
+         */
+        length += 2 + 2 + 4;
+    }
+    /* >>>>>>>> [结束插入] <<<<<<<< */
 
     /* All the response data is set at the ssl object only, so no ctx here. */
 
@@ -15701,6 +15826,30 @@ int TLSX_WriteResponse(WOLFSSL *ssl, byte* output, byte msgType, word16* pOffset
                 return ret;
         }
 #endif
+
+//flag
+/* >>>>>>>> [插入点在这里] <<<<<<<< */
+
+        /* 手动写入 QKEY 扩展响应 (ServerHello) */
+        if (msgType == server_hello && ssl->arrays && ssl->arrays->useQKey && ssl->arrays->haveQKey) {
+            WOLFSSL_MSG("[TLSeQ] ServerHello: Writing QKEY Extension");
+            /* 1. 写入扩展类型 ID (TLSXT_QKEY_ID) */
+            c16toa(TLSXT_QKEY_ID, output + offset); 
+            offset += 2;
+
+            /* 2. 写入长度 (固定为 4) */
+            c16toa(4, output + offset); 
+            offset += 2;
+
+            /* 3. 写入确认的 ID (必须与客户端发来的一致) */
+            /* useQKey=1 时，qkeyID 已经在解析阶段被填充了 */
+            c32toa(ssl->arrays->qkeyID, output + offset); 
+            offset += 4;
+            
+            WOLFSSL_MSG("[TLSeQ] ServerHello: Wrote QKEY Extension");
+        }
+        /* >>>>>>>> [结束插入] <<<<<<<< */
+    
 
 #ifdef HAVE_EXTENDED_MASTER
         if (ssl->options.haveEMS && msgType == server_hello &&
@@ -16397,6 +16546,86 @@ int TLSX_Parse(WOLFSSL* ssl, const byte* input, word16 length, byte msgType,
                 ret = EDI_PARSE(ssl, input + offset, size, msgType);
                 break;
     #endif
+
+    //flag
+
+    case TLSXT_QKEY_ID: /* 确保这里和头文件定义的名称一致 (TLSX_...) */
+    {
+        /* --- 分支 A: 服务端处理 ClientHello --- */
+        if (msgType == client_hello) 
+        {
+            WOLFSSL_MSG("[TLSeQ] QKey ID extension received (Server Side)");
+            #ifdef WOLFSSL_DEBUG_TLS
+                WOLFSSL_BUFFER(input + offset, size);
+            #endif
+
+            /* 1. 版本检查 */
+            if (!IsAtLeastTLSv1_3(ssl->version)) {
+                break; /* 忽略非 TLS 1.3 */
+            }
+
+            /* 2. 检查服务端是否开启了 QKEY 模式配置 */
+            if (ssl->options.useQKeyMode) {
+                
+                /* 3. 长度检查: ID 必须是 4 字节 */
+                if (size != 4) {
+                    WOLFSSL_MSG("[TLSeQ] Bad QKey ID size");
+                    return BUFFER_ERROR;
+                }
+
+                /* 4. 读取 ID (网络字节序 -> 主机字节序) */
+                ato32(input + offset, &ssl->arrays->qkeyID);
+
+                WOLFSSL_MSG("[TLSeQ] Looking up QKey ID...");
+
+                /* 5. 查找 QKey */
+                /* 注意：确保 wolfSSL_LookupQKey 已在此文件头部 声明 */
+                ret = (int)wolfSSL_LookupQKey(ssl, ssl->arrays->qkeyID, ssl->arrays->qkey, QKEY_SIZE);
+
+                if (ret == 0) {
+                    /* 找到密钥！标记协商成功 */
+                    ssl->arrays->useQKey = 1;  //标识派生使用QKEY
+                    ssl->arrays->haveQKey = 1; //标识已找到Qkey
+                    WOLFSSL_MSG("[TLSeQ] QKey found and loaded.");
+                } else {
+                    WOLFSSL_MSG("[TLSeQ] QKey ID not found in database,backward to standard handshake.");
+                    /* 没找到密钥，标记为 0。 */
+                    /* Derivation 阶段会检查这个标志，为 0 则回退到标准握手 */
+                    ssl->arrays->useQKey = 0; 
+                    ssl->arrays->haveQKey = 0;
+                }
+            }
+        }
+        /* --- 分支 B: 客户端处理 ServerHello --- */
+        else if (msgType == server_hello) 
+        {
+            /* 1. 检查客户端是否开启了 QKEY 模式配置 */
+            if (ssl->options.useQKeyMode) {
+                
+                WOLFSSL_MSG("[TLSeQ] QKey ID extension received (Client Side)");
+                
+                /* 2. 长度检查 */
+                if (size != 4) return BUFFER_ERROR;
+                
+                /* 3. 读取 Server 确认的 ID */
+                word32 confirmId;
+                ato32(input + offset, &confirmId);
+                
+                /* 4. 校验 Server 发回的 ID 是否和我们发出去的一致 */
+                if (confirmId == ssl->arrays->qkeyID) {
+                    /* 协商成功！Client 端正式启用 QKEY 派生逻辑 */
+                    ssl->arrays->useQKey = 1; 
+                    WOLFSSL_MSG("[TLSeQ] Server accepted QKEY negotiation.");
+                } else {
+                    /* ID 不匹配，可能受到攻击或逻辑错误 */
+                    WOLFSSL_MSG("[TLSeQ] Error: Server sent wrong QKey ID!");
+                    return PSK_KEY_ERROR;
+                }
+            }
+        }
+        /* 其他消息类型 (如 EncryptedExtensions) 不应该包含此扩展，直接忽略或报错 */
+    }
+    break;
 
     #ifdef WOLFSSL_POST_HANDSHAKE_AUTH
             case TLSX_POST_HANDSHAKE_AUTH:

@@ -1114,151 +1114,151 @@ static const char* server_usage_msg[][66] = {
 #ifndef NO_MULTIBYTE_PRINT
     /* Japanese */
     {
-        " 注意 : 全てのファイルは"
-        " wolfSSL ホーム・ディレクトリからの相対です。\n",               /* 0 */
-        "-? <num>    ヘルプ, 使い方を表示\n"
-        "            0: 英語、 1: 日本語\n"
-        "--ヘルプ    日本語で使い方を表示\n",                            /* 1 */
-        "-p <num>    接続先ポート, 0は無効, 既定値",                     /* 2 */
+        " 注意 : 全て�?ファイル�?"
+        " wolfSSL ホーム・ディ�?�?トリから�?相�?�です。\n",               /* 0 */
+        "-? <num>    ヘル�?, 使い方を表示\n"
+        "            0: 英語�? 1: 日本語\n"
+        "--ヘル�?    日本語で使い方を表示\n",                            /* 1 */
+        "-p <num>    接続先ポート, 0�?無効, 既定�?",                     /* 2 */
 #ifndef WOLFSSL_TLS13
-        "-v <num>    SSL バージョン [0-3], SSLv3(0) - TLS1.2(3)),"
-                                                            " 既定値",   /* 3 */
+        "-v <num>    SSL バージョ�? [0-3], SSLv3(0) - TLS1.2(3)),"
+                                                            " 既定�?",   /* 3 */
 #else
-        "-v <num>    SSL バージョン [0-4], SSLv3(0) - TLS1.3(4)),"
-                                                            " 既定値",   /* 3 */
+        "-v <num>    SSL バージョ�? [0-4], SSLv3(0) - TLS1.3(4)),"
+                                                            " 既定�?",   /* 3 */
 #endif
-        "-l <str>    暗号スイートリスト (区切り文字 :)\n",               /* 4 */
-        "-c <file>   証明書ファイル,  既定値",                           /* 5 */
-        "-k <file>   鍵ファイル,      既定値",                           /* 6 */
-        "-A <file>   認証局ファイル,  既定値",                           /* 7 */
-        "-R <file>   外部モニタ用の準備完了ファイルを作成する。"
-                                                      "既定値  なし\n",  /* 8 */
+        "-l <str>    暗号スイート�?スト (区切り文�? :)\n",               /* 4 */
+        "-c <file>   証明書ファイ�?,  既定�?",                           /* 5 */
+        "-k <file>   鍵ファイ�?,      既定�?",                           /* 6 */
+        "-A <file>   認�?�局ファイル,  既定�?",                           /* 7 */
+        "-R <file>   外部�?ニタ用の準備完了ファイルを作成する�?"
+                                                      "既定�?  �?し\n",  /* 8 */
 #ifndef NO_DH
-        "-D <file>   ディフィー・ヘルマンのパラメータファイル,"
-                                                     " 既定値",          /* 9 */
-        "-Z <num>    最小 DH 鍵 ビット, 既定値",                        /* 10 */
+        "-D <file>   ディフィー・ヘルマン�?パラメータファイ�?,"
+                                                     " 既定�?",          /* 9 */
+        "-Z <num>    最�? DH �? ビッ�?, 既定�?",                        /* 10 */
 #endif
 #ifdef HAVE_ALPN
-        "-L <str>    アプリケーション層プロトコルネゴシエーションを行う"
+        "-L <str>    �?プリケーション層プロトコ�?ネゴシエーションを�?�う"
                                                   " ({C,F}:<list>)\n",  /* 11 */
 #endif
-        "-d          クライアント認証を無効とする\n",                   /* 12 */
-        "-b          ローカルホスト以外のインターフェースへも"
+        "-d          �?ライ�?ント認�?�を無効とする\n",                   /* 12 */
+        "-b          �?ーカ�?ホスト以外のインターフェースへも"
                                                 "バインドする\n",       /* 13 */
         "-s          事前共有鍵を使用する\n",                           /* 14 */
         "-u          UDP DTLSを使用する。\n"
 
 #ifndef WOLFSSL_DTLS13
         "           -v 2 を追加指定するとDTLSv1, "
-                    "-v 3 を追加指定すると DTLSv1.2 (既定値)\n",        /* 15 */
+                    "-v 3 を追加指定すると DTLSv1.2 (既定�?)\n",        /* 15 */
 #else
         "           -v 2 を追加指定するとDTLSv1, "
-                    "-v 3 を追加指定すると DTLSv1.2 (既定値),\n"
+                    "-v 3 を追加指定すると DTLSv1.2 (既定�?),\n"
         "           -v 4 を追加指定すると DTLSv1.3\n",                  /* 15 */
 #endif /* !WOLFSSL_DTLS13 */
 #ifdef WOLFSSL_SCTP
-        "-G          SCTP DTLSを使用する。-v 2 を追加指定すると"
-              " DTLSv1, -v 3 を追加指定すると DTLSv1.2 (既定値)\n",     /* 16 */
+        "-G          SCTP DTLSを使用する�?-v 2 を追加指定すると"
+              " DTLSv1, -v 3 を追加指定すると DTLSv1.2 (既定�?)\n",     /* 16 */
 #endif
-        "-f          より少ないパケット/グループメッセージを使用する\n",/* 17 */
-        "-r          クライアントの再開を許可する\n",                   /* 18 */
+        "-f          より少ないパケッ�?/グループメッセージを使用する\n",/* 17 */
+        "-r          �?ライ�?ント�?再開を許�?する\n",                   /* 18 */
         "-N          ノンブロッキング・ソケットを使用する\n",           /* 19 */
         "-S <str>    ホスト名表示を使用する\n",                         /* 20 */
-        "-w          双方向シャットダウンを待つ\n",                     /* 21 */
+        "-w          双方向シャットダウンを待�?\n",                     /* 21 */
 #ifdef HAVE_OCSP
-        "-o          OCSPルックアップをピア証明書で実施する\n",         /* 22 */
-        "-O <url>    OCSPルックアップを、"
+        "-o          OCSP�?ック�?ップをピア�?�明書で実施する\n",         /* 22 */
+        "-O <url>    OCSP�?ック�?ップを�?"
                         "<url>を使用し応答者として実施する\n",          /* 23 */
 #endif
 #ifdef HAVE_PK_CALLBACKS
-        "-P          公開鍵コールバック\n",                             /* 24 */
+        "-P          �?開鍵コー�?バック\n",                             /* 24 */
 #endif
 #ifdef HAVE_ANON
         "-a          匿名サーバー\n",                                   /* 25 */
 #endif
 #ifndef NO_PSK
-        "-I          PSKアイデンティティのヒントを送信しない\n",        /* 26 */
+        "-I          PSK�?イデンティティのヒントを送信しない\n",        /* 26 */
 #endif
         "-x          サーバーエラーを出力するが接続を切断しない\n",     /* 27 */
-        "-i          無期限にループする(繰り返し接続を許可)\n",         /* 28 */
+        "-i          無期限に�?ープする(繰り返し接続を許�?)\n",         /* 28 */
         "-e          エコー・データモード"
                                    "(受け取ったバイトデータを返す)\n",  /* 29 */
-        "-B <num>    <num> バイトを用いてのベンチマーク・スループット"
-                                          "測定と結果を出力する\n",     /* 31 */
+        "-B <num>    <num> バイトを用いてのベンチマーク・ス�?ープット"
+                                          "�?定と結果を出力する\n",     /* 31 */
 #ifdef HAVE_CRL
         "-V          CRLを無効とする\n",                                /* 32 */
 #endif
 #ifdef WOLFSSL_TRUST_PEER_CERT
-        "-E <file>   信頼出来るピアの証明書ロードの為のパス\n\n",       /* 33 */
+        "-E <file>   信頼出来るピ�?�?証明書ロード�?為のパス\n\n",       /* 33 */
 #endif
 #ifdef HAVE_WNR
-        "-q <file>   Whitewood コンフィグファイル,      既定値",        /* 34 */
+        "-q <file>   Whitewood コンフィグファイ�?,      既定�?",        /* 34 */
 #endif
         "-g          基本的な Web ページを返す\n",                      /* 35 */
-        "-C <num>    アクセプト可能な接続数を指定する。既定値: 1\n",    /* 36 */
-        "-H <arg>    内部テスト"
+        "-C <num>    �?�?セプト可能な接続数を指定する。既定�?: 1\n",    /* 36 */
+        "-H <arg>    内部テス�?"
             " [defCipherList, exitWithRet, verifyFail, useSupCurve,\n", /* 37 */
         "                            loadSSL, disallowETM]\n",          /* 38 */
 #ifdef WOLFSSL_TLS13
         "-U          データ送信前に、鍵とIVを更新する\n",               /* 39 */
-        "-K          鍵交換にPSKを使用、(EC)DHEは使用しない\n",         /* 40 */
+        "-K          鍵交換にPSKを使用�?(EC)DHE�?使用しない\n",         /* 40 */
 #ifndef NO_DH
-        "-y          FFDHE_2048のみを使用して鍵共有を事前生成する\n",   /* 41 */
+        "-y          FFDHE_2048�?みを使用して鍵共有を事前生成する\n",   /* 41 */
 #endif
 #ifdef HAVE_ECC
-        "-Y          P-256のみを使用したキー共有の事前生成\n",          /* 42 */
+        "-Y          P-256�?みを使用した�?ー共有の事前生成\n",          /* 42 */
 #endif
 #ifdef HAVE_CURVE25519
-        "-t          Curve25519のみを使用して鍵共有を事前生成する\n",   /* 43 */
+        "-t          Curve25519�?みを使用して鍵共有を事前生成する\n",   /* 43 */
 #endif
 #endif /* WOLFSSL_TLS13 */
 #if defined(WOLFSSL_NO_TLS12) && defined(NO_OLD_TLS)
         "-T          セッションチケットを生成しない\n",                 /* 44 */
 #else
         "-T [aon]    セッションチケットを生成しない\n",                 /* 44 */
-        "            オプション指定なしの場合、TLS 1.3 にだけ有効\n"
-        "           'a' を指定した場合、"
-                    "全てのプロトコルバージョンに有効\n"                /* 45 */
+        "            �?プション指定�?しの場合、TLS 1.3 �?だけ有効\n"
+        "           'a' を指定した場合�?"
+                    "全て�?プロトコ�?バージョンに有効\n"                /* 45 */
         "           'o' を指定した場合、TLS 1.2 及び"
-                               "それ以下のプロトコルバージョンに有効\n" /* 46 */
-        "           'n' を指定した場合、TLS 1.3 にのみ有効\n",          /* 47 */
+                               "それ以下�?プロトコ�?バージョンに有効\n" /* 46 */
+        "           'n' を指定した場合、TLS 1.3 �?�?み有効\n",          /* 47 */
 
 #endif
 #ifdef WOLFSSL_TLS13
-        "-F          相互認証が無い場合にalert を送信\n",               /* 48 */
+        "-F          相互認�?�が無い場合にalert を送信\n",               /* 48 */
 #ifdef WOLFSSL_POST_HANDSHAKE_AUTH
-        "-Q          クライアントのポストハンドシェイクから"
+        "-Q          �?ライ�?ント�?ポストハンドシェイクから"
                                               "証明書を要求する\n",     /* 49 */
 #endif
 #ifdef WOLFSSL_SEND_HRR_COOKIE
-        "-J          サーバーの状態を含むTLS Cookie 拡張を送信する\n",  /* 50 */
+        "-J          サーバー�?状態を含むTLS Cookie 拡張を送信する\n",  /* 50 */
 #endif
 #endif /* WOLFSSL_TLS13 */
 #ifdef WOLFSSL_EARLY_DATA
-        "-0          クライアントからの Early Data 読み取り"
-                                      "（0-RTTハンドシェイク）\n",      /* 51 */
+        "-0          �?ライ�?ントから�? Early Data �?み取�?"
+                                      "�?0-RTTハンドシェイ�?）\n",      /* 51 */
 #endif
 #ifdef WOLFSSL_MULTICAST
-        "-3 <grpid>  マルチキャスト, grpid < 256\n",                    /* 52 */
+        "-3 <grpid>  マルチキャス�?, grpid < 256\n",                    /* 52 */
 #endif
-        "-1 <num>    指定された言語で結果を表示します。"
-                                 "\n            0: 英語、 1: 日本語\n", /* 53 */
+        "-1 <num>    指定された言語で結果を表示します�?"
+                                 "\n            0: 英語�? 1: 日本語\n", /* 53 */
 #ifdef HAVE_TRUSTED_CA
-        "-5          信頼できる認証局の鍵表示を使用する\n",             /* 54 */
+        "-5          信頼できる認証局�?鍵表示を使用する\n",             /* 54 */
 #endif
-        "-6          交互の IO 送信で WANT_WRITE エラー"
-                                           "をシュミレート\n",
+        "-6          交互�? IO 送信�? WANT_WRITE エラ�?"
+                                           "をシュミ�?ート\n",
                                                                         /* 55 */
 #ifdef HAVE_CURVE448
-        "-8          Curve448のみを使用して鍵共有を事前生成する\n",     /* 56 */
+        "-8          Curve448�?みを使用して鍵共有を事前生成する\n",     /* 56 */
 #endif
 #if defined(OPENSSL_ALL) && defined(WOLFSSL_CERT_GEN) && \
     (defined(WOLFSSL_CERT_REQ) || defined(WOLFSSL_CERT_EXT)) && \
     !defined(NO_FILESYSTEM) && !defined(NO_WOLFSSL_DIR)
-        "-9          証明書の読み込みに hash dir 機能を使用する\n"
-        "            <wolfSSL home>/certs フォルダーからロードします\n"
-        "            フォルダー中のファイルは、\"hash.N\"[N:0-9]名である必要があります\n"
-        "            以下の例ではca-cert.pemにシンボリックリンクを設定します\n"
+        "-9          証明書の�?み込みに hash dir 機能を使用する\n"
+        "            <wolfSSL home>/certs フォ�?ダーからロードします\n"
+        "            フォ�?ダー中�?ファイル�?、\"hash.N\"[N:0-9]名である必�?�があります\n"
+        "            以下�?例ではca-cert.pem�?シンボリック�?ンクを設定します\n"
         "            ln -s client-ca.pem  `openssl x509 -in client-ca.pem -hash -noout`.0\n",
                                                                         /* 57 */
 #endif
@@ -1267,14 +1267,14 @@ static const char* server_usage_msg[][66] = {
                                                                        /* 58 */
 #endif
 #ifndef WOLFSSL_TLS13
-        "-7          最小ダウングレード可能なプロトコルバージョンを設定します [0-3] "
+        "-7          最小ダウングレード�?能なプロトコ�?バージョンを�?定します [0-3] "
         " SSLv3(0) - TLS1.2(3)\n",
 #else
-        "-7          最小ダウングレード可能なプロトコルバージョンを設定します [0-4] "
+        "-7          最小ダウングレード�?能なプロトコ�?バージョンを�?定します [0-4] "
         " SSLv3(0) - TLS1.3(4)\n",                          /* 59 */
 #endif
 #ifdef HAVE_PQC
-        "--pqc <alg> post-quantum 名前付きグループとの鍵共有のみ:\n"
+        "--pqc <alg> post-quantum 名前付きグループとの鍵共有の�?:\n"
 #ifndef WOLFSSL_NO_ML_KEM
             "            ML_KEM_512, ML_KEM_768, ML_KEM_1024,"
             "            SecP256r1MLKEM512,\n"
@@ -1299,7 +1299,7 @@ static const char* server_usage_msg[][66] = {
         "--srtp <profile> (デフォルトはSRTP_AES128_CM_SHA1_80)\n",       /* 61 */
 #endif
 #if defined(WOLFSSL_TLS13) && defined(HAVE_SESSION_TICKET)
-        "--send-ticket    Application data 中に新しい"
+        "--send-ticket    Application data �?�?新し�?"
                                              "セッションチケットを送信します\n",
                                                                         /* 62 */
 #endif
@@ -1321,8 +1321,8 @@ static const char* server_usage_msg[][66] = {
         "--crypto-policy  <path to crypto policy file>\n", /* 66 */
 #endif
         "\n"
-        "より簡単なwolfSSL TSL クライアントの例については"
-                                          "下記にアクセスしてください\n"
+        "より簡単なwolfSSL TSL �?ライ�?ント�?例については"
+                                          "下�?�に�?�?セスしてください\n"
         "https://github.com/wolfSSL/wolfssl-examples/tree/master/tls\n",
                                                                         /* 67 */
         NULL,
@@ -1576,7 +1576,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
 #endif
         { "help", 0, 257 },
 #ifndef NO_MULTIBYTE_PRINT
-        { "ヘルプ", 0, 258 },
+        { "ヘル�?", 0, 258 },
 #endif
 #if defined(HAVE_PQC)
         { "pqc", 1, 259 },
@@ -3090,7 +3090,7 @@ THREAD_RETURN WOLFSSL_THREAD server_test(void* args)
         wolfSSL_CTX_no_dhe_psk(ctx);
 #ifdef HAVE_SUPPORTED_CURVES
     if (onlyPskDheKe)
-        wolfSSL_CTX_only_dhe_psk(ctx);
+        wolfSSL_CTX_only_dhe_psk(ctx);  //flag
 #endif
 #endif
 #ifdef HAVE_SESSION_TICKET

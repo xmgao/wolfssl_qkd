@@ -11931,6 +11931,39 @@ int wolfSSL_set_compression(WOLFSSL* ssl)
         ctx->server_psk_cb = cb;
     }
 
+    //flag
+    void wolfSSL_CTX_set_qkey_client_callback(WOLFSSL_CTX* ctx,
+                                                        wc_qkey_client_callback cb)
+    {
+        WOLFSSL_MSG("[TLSeQ] wolfSSL_CTX_set_qkey_client_callback");
+        if (ctx == NULL)
+            return;
+        ctx->client_qkey_cb = cb;
+    }
+
+    void wolfSSL_set_qkey_client_callback(WOLFSSL* ssl,
+                                                        wc_qkey_client_callback cb){
+        WOLFSSL_MSG("[TLSeQ] wolfSSL_set_qkey_client_callback");
+        ssl->options.client_qkey_cb = cb;
+
+    }
+
+    void wolfSSL_CTX_set_qkey_server_callback(WOLFSSL_CTX* ctx,
+                                                        wc_qkey_server_callback cb)
+    {
+        WOLFSSL_MSG("[TLSeQ] wolfSSL_CTX_set_qkey_server_callback");
+        if (ctx == NULL)
+            return;
+        ctx->server_qkey_cb = cb;
+    }
+
+    void wolfSSL_set_qkey_server_callback(WOLFSSL* ssl,
+                                                        wc_qkey_server_callback cb){
+        WOLFSSL_MSG("[TLSeQ] wolfSSL_set_qkey_server_callback");
+        ssl->options.server_qkey_cb = cb;
+
+    }
+
     void wolfSSL_set_psk_server_callback(WOLFSSL* ssl,wc_psk_server_callback cb)
     {
         byte haveRSA = 1;
